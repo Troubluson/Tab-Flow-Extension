@@ -11,7 +11,7 @@ const logEvent = async (event) => {
   if (!activeSession) {
     return;
   }
-  const key = await getActiveSession();
+  const key = getSessionKey(activeSession);
   if (!key) return;
   const { [key]: events = [] } = await browser.storage.local.get(key);
   events.push(event);
@@ -23,7 +23,7 @@ async function startSession() {
   activeSession = id;
   await browser.storage.local.set({
     activeSession: id,
-    [sessionKey(id)]: [],
+    [getSessionKey(id)]: [],
   });
   return id;
 }
@@ -42,6 +42,7 @@ browser.tabs.onCreated.addListener((tab) => {
     openerTabId: tab.openerTabId ?? null,
     url: tab.url ?? null,
     timestamp: Date.now(),
+    favicon: tab.favIconUrl ?? null
   });
 });
 
@@ -53,6 +54,7 @@ browser.tabs.onUpdated.addListener((tabId, changeInfo) => {
       tabId,
       url: changeInfo.url,
       timestamp: Date.now(),
+      favicon: tab.favIconUrl ?? null
     });
   }
 });
@@ -83,16 +85,16 @@ const getActiveSession = async () => {
 
 /** Messaging */
 
-browser.runtime.onMessage.addListener((msg, sender) => {
+browser.runtime.onMessage.addListener(async (msg, sender) => {
   switch (msg.type) {
     case "START_SESSION":
-      startSession(msg.sessionId);
+      await startSession(msg.sessionId);
       return true;
     case "END_SESSION":
-      endSession();
+      await endSession();
       return true;
     case "GET_ACTIVE_SESSION":
-      return getActiveSession();
+      return await getActiveSession();
     case "GET_EVENTS":
       if (!activeSession) return [];
       return getActiveSession().then(async (id) => {

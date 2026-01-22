@@ -1,120 +1,165 @@
 import * as d3 from "d3";
 
-// -----------------------------
-// 1. Setup SVG
-// -----------------------------
-const width = 1200;
-const height = 800;
+/* ------------------ constants ------------------ */
 
-const svg = d3.select("#graph").attr("width", width).attr("height", height);
+const NODE_WIDTH = 100;
+const NODE_HEIGHT = 60;
+const LANE_HEIGHT = 100;
+const MARGIN = { top: 40, left: 40, right: 40, bottom: 40 };
 
-// -----------------------------
-// 2. Fetch events from background
-// -----------------------------
-async function fetchEvents() {
-  try {
-    const events = await browser.runtime.sendMessage({ type: "GET_EVENTS" });
-    return events || [];
-  } catch (e) {
-    console.error("Failed to fetch events:", e);
-    return [];
-  }
+/* ------------------ load data ------------------ */
+
+async function loadEvents() {
+  return browser.runtime.sendMessage({ type: "GET_EVENTS" });
 }
 
-// -----------------------------
-// 3. Build nodes and links
-// -----------------------------
+/* ------------------ layout ------------------ */
+
 function buildGraph(events) {
-  const nodes = [];
-  const links = [];
-  const seen = new Set();
+  // Sort by time
+  events.sort((a, b) => a.timestamp - b.timestamp);
 
-  for (const evt of events) {
-    if (evt.type === "tab-created" && !seen.has(evt.tabId)) {
-      seen.add(evt.tabId);
+  // Nodes
+  const nodes = events.map(e => ({
+    id: e.tabId,
+    opener: e.openerTabId,
+    url: e.url,
+    t: e.timestamp,
+    thumbnail: e.thumbnail
+  }));
 
-      nodes.push({
-        id: evt.tabId,
-        url: evt.url,
-        t: evt.timestamp,
-        opener: evt.openerTabId,
-      });
+  const nodeById = new Map(nodes.map(n => [n.id, n]));
 
-      if (evt.openerTabId != null) {
-        links.push({
-          source: evt.openerTabId,
-          target: evt.tabId,
-        });
-      }
+  // Edges
+  const links = nodes
+    .filter(n => n.opener && nodeById.has(n.opener))
+    .map(n => ({
+      source: n.opener,
+      target: n.id
+    }));
+
+  // Lane assignment
+  let laneCounter = 0;
+
+  function assignLane(node) {
+    if (node.lane !== undefined) return node.lane;
+
+    if (node.opener && nodeById.has(node.opener)) {
+      node.lane = assignLane(nodeById.get(node.opener));
+    } else {
+      node.lane = laneCounter++;
     }
+    return node.lane;
   }
+
+  nodes.forEach(assignLane);
 
   return { nodes, links };
 }
 
-// -----------------------------
-// 4. Render the graph
-// -----------------------------
-function renderGraph(nodes, links) {
-  svg.selectAll("*").remove();
+/* ------------------ render ------------------ */
 
-  // Horizontal timeline scale
-  const tExtent = d3.extent(nodes, (d) => d.t);
-  const xScale = d3
-    .scaleTime()
-    .domain(tExtent)
-    .range([50, width - 50]);
+function render({ nodes, links }) {
+  const svg = d3.select("#graph");
+  const viewport = d3.select("#viewport");
 
-  // Assign vertical lanes
-  const laneMap = new Map();
-  let lane = 0;
-  nodes.forEach((n) => {
-    if (n.opener != null && laneMap.has(n.opener)) {
-      n.lane = laneMap.get(n.opener) + 1;
-    } else {
-      n.lane = lane++;
-    }
-    laneMap.set(n.id, n.lane);
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+
+  svg.attr("width", width).attr("height", height);
+
+  // Time scale
+  const xScale = d3.scaleTime()
+    .domain(d3.extent(nodes, d => d.t))
+    .range([MARGIN.left, width - MARGIN.right]);
+
+  // Y scale
+  const yScale = d3.scaleLinear()
+    .domain([0, d3.max(nodes, d => d.lane)])
+    .range([MARGIN.top, height - MARGIN.bottom]);
+
+  // Compute node positions
+  nodes.forEach(n => {
     n.x = xScale(n.t);
-    n.y = 50 + n.lane * 60;
+    n.y = yScale(n.lane);
   });
 
-  // Links
-  svg
-    .selectAll(".link")
+  const nodeById = new Map(nodes.map(n => [n.id, n]));
+
+  /* ---- links ---- */
+
+  const linkGen = d3.linkHorizontal()
+    .x(d => d.x)
+    .y(d => d.y);
+
+  d3.select(".links")
+    .selectAll("path")
     .data(links)
-    .enter()
-    .append("line")
+    .join("path")
     .attr("class", "link")
-    .attr("x1", (d) => nodes.find((n) => n.id === d.source)?.x ?? 0)
-    .attr("y1", (d) => nodes.find((n) => n.id === d.source)?.y ?? 0)
-    .attr("x2", (d) => nodes.find((n) => n.id === d.target)?.x ?? 0)
-    .attr("y2", (d) => nodes.find((n) => n.id === d.target)?.y ?? 0);
+    .attr("d", d => {
+      const s = nodeById.get(d.source);
+      const t = nodeById.get(d.target);
+      return linkGen({ source: s, target: t });
+    });
 
-  // Nodes
-  const node = svg
-    .selectAll(".node")
+  /* ---- nodes ---- */
+
+  const nodeSel = d3.select(".nodes")
+    .selectAll("g.node")
     .data(nodes)
-    .enter()
-    .append("g")
+    .join("g")
     .attr("class", "node")
-    .attr("transform", (d) => `translate(${d.x},${d.y})`);
+    .attr("transform", d => `translate(${d.x}, ${d.y})`)
+    .style("cursor", "pointer");
 
-  node.append("circle").attr("r", 8);
-  node
-    .append("text")
-    .attr("x", 12)
-    .attr("y", 4)
-    .text((d) => (d.url ? new URL(d.url).hostname : "new tab"));
+  nodeSel.append("rect")
+    .attr("x", -NODE_WIDTH / 2)
+    .attr("y", -NODE_HEIGHT / 2)
+    .attr("width", NODE_WIDTH)
+    .attr("height", NODE_HEIGHT);
+
+  nodeSel.append("image")
+    .attr("href", d => d.favicon || "icons/icon-32.png")
+    .attr("width", 16)
+    .attr("height", 16)
+    .attr("x", -NODE_WIDTH / 2 + 6)
+    .attr("y", -NODE_HEIGHT / 2 + 6);
+
+  nodeSel.append("text")
+    .attr("y", NODE_HEIGHT / 2 - 6)
+    .attr("text-anchor", "middle")
+    .text(d => {
+      try {
+        return new URL(d.url).hostname;
+      } catch {
+        return "";
+      }
+    });
+
+  /* ---- interaction ---- */
+
+  nodeSel.on("click", (_, d) => {
+    browser.tabs.update(d.id, { active: true });
+  });
+
+  /* ---- zoom ---- */
+
+  svg.call(
+    d3.zoom()
+      .scaleExtent([0.5, 5])
+      .on("zoom", e => {
+        viewport.attr("transform", e.transform);
+      })
+  );
 }
 
-// -----------------------------
-// 5. Main
-// -----------------------------
+/* ------------------ main ------------------ */
+
 async function main() {
-  const events = await fetchEvents();
-  const { nodes, links } = buildGraph(events);
-  renderGraph(nodes, links);
+  const events = await loadEvents();
+  const graph = buildGraph(events);
+  render(graph);
 }
 
 main();
