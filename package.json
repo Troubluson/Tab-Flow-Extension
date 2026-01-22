@@ -1,0 +1,17 @@
+{
+  "name": "tab-mindmap",
+  "version": "0.1.0",
+  "description": "",
+  "repository": "",
+  "author": "",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "parcel build [input.ts] --experimental-scope-hoisting --no-source-maps --public-url ./",
+    "watch": "parcel watch [input.ts] --public-url ./"
+  },
+  "dependencies": {
+    "d3": "^7.9.0",
+    "vite": "^7.3.1"
+  }
+}
