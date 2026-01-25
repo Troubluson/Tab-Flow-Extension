@@ -1,6 +1,8 @@
 let activeSession = null;
 const lastPageByTab = new Map();
 
+const openerTabByTab = new Map(); // tabId → openerTabId
+
 const getSessionKey = (id) => `events_${id}`;
 
 /* ---------------- storage helpers ---------------- */
@@ -21,7 +23,7 @@ async function startSession() {
 
   await browser.storage.local.set({
     activeSession: id,
-    [getSessionKey(id)]: []
+    [getSessionKey(id)]: [],
   });
 
   return id;
@@ -39,6 +41,14 @@ async function getActiveSession() {
 }
 
 /* ---------------- navigation → page ---------------- */
+
+/* Get which tab spawned another tab */
+browser.tabs.onCreated.addListener((tab) => {
+  if (tab.openerTabId != null) {
+    openerTabByTab.set(tab.id, tab.openerTabId);
+  }
+  console.log(tab.id, tab.openerTabId);
+});
 
 browser.webNavigation.onCommitted.addListener(async (details) => {
   if (!activeSession) return;
@@ -58,19 +68,20 @@ browser.webNavigation.onCommitted.addListener(async (details) => {
 
   let sourcePageId = null;
 
-  // Same-tab navigation
+  /* same-tab navigation */
   if (lastPageByTab.has(tabId)) {
     sourcePageId = lastPageByTab.get(tabId);
   }
 
-  // New tab opened from another tab
-  if (details.openerTabId != null) {
-    const openerPage = lastPageByTab.get(details.openerTabId);
-    if (openerPage) {
-      sourcePageId = openerPage;
+  /* new-tab navigation (from opener) */
+  const openerTabId = openerTabByTab.get(tabId);
+  if (openerTabId != null) {
+    const openerPageId = lastPageByTab.get(openerTabId);
+    if (openerPageId) {
+      sourcePageId = openerPageId;
     }
   }
-
+  console.log(details);
   const event = {
     type: "page",
     pageId,
@@ -79,18 +90,64 @@ browser.webNavigation.onCommitted.addListener(async (details) => {
     url: details.url,
     title: tab.title ?? details.url,
     favicon: tab.favIconUrl ?? null,
-    timestamp
+    timestamp,
   };
+  console.log(`opened ${details.url} from ${tabId}`);
 
   lastPageByTab.set(tabId, pageId);
+  openerTabByTab.delete(tabId);
+
   await logEvent(event);
 });
+
+// Fetch favicon if wasn't available before
+browser.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (!activeSession) return;
+  if (changeInfo.favIconUrl) {
+    const pageId = lastPageByTab.get(tabId);
+    if (!pageId) return;
+
+    updateFavicon(pageId, changeInfo.favIconUrl);
+  }
+  if (changeInfo.title) {
+    const pageId = lastPageByTab.get(tabId);
+    if (!pageId) return;
+    updateTitle(pageId, changeInfo.title);
+  }
+  return;
+});
+
+async function updateFavicon(pageId, faviconUrl) {
+  const key = getSessionKey(activeSession);
+  const { [key]: events = [] } = await browser.storage.local.get(key);
+
+  const event = events.find((e) => e.pageId === pageId);
+  if (!event) return;
+
+  if (event.favicon) return; // don't overwrite
+
+  event.favicon = faviconUrl;
+  await browser.storage.local.set({ [key]: events });
+}
+
+async function updateTitle(pageId, title) {
+  const key = getSessionKey(activeSession);
+  const { [key]: events = [] } = await browser.storage.local.get(key);
+
+  const event = events.find((e) => e.pageId === pageId);
+  if (!event) return;
+
+  if (event.title) return; // don't overwrite
+
+  event.title = title;
+  await browser.storage.local.set({ [key]: events });
+}
 
 /* ---------------- UI ---------------- */
 
 browser.browserAction.onClicked.addListener(() => {
   browser.tabs.create({
-    url: browser.runtime.getURL("dist/viewer.html")
+    url: browser.runtime.getURL("dist/viewer.html"),
   });
 });
 

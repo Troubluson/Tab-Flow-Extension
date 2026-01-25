@@ -7,8 +7,7 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "build": "parcel build [input.ts] --experimental-scope-hoisting --no-source-maps --public-url ./",
-    "watch": "parcel watch [input.ts] --public-url ./"
+    "build": "npx vite build && cp ./src/graph/viewer.html ./dist/viewer.html &&  cp ./src/popup.html ./dist/popup.html"
   },
   "dependencies": {
     "cytoscape": "^3.33.1",

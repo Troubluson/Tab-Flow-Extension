@@ -21,3 +21,11 @@ const captureThumbnail = async (url, tabId) => {
     return null;
   }
 };
+
+export const loadEvents = async () => {
+  return browser.runtime.sendMessage({ type: "GET_EVENTS" });
+};
+
+export const getSessionId = async () => {
+  return browser.runtime.sendMessage({ type: "GET_ACTIVE_SESSION" });
+};
