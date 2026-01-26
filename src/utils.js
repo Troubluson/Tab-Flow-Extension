@@ -29,3 +29,20 @@ export const loadEvents = async () => {
 export const getSessionId = async () => {
   return browser.runtime.sendMessage({ type: "GET_ACTIVE_SESSION" });
 };
+
+export const domainFromUrl = (url) => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "unknown";
+  }
+};
+
+export const timeScalePower = (minT, maxT, alpha = 0.4) => {
+  return (t) => Math.pow((t - minT) / (maxT - minT), alpha);
+};
+
+export const safeLabel = (text) => {
+  if (!text) return "";
+  return text.length > 50 ? text.slice(0, 47) + "…" : text;
+};

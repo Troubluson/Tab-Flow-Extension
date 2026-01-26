@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Tab Graph</title>
+  <style>
+    html, body, #cy {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+    }
+
+    .tooltip {
+      position: absolute;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 14px;
+      max-width: 260px;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 9999;
+    }
+
+    .tooltip.hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <input type="text" id="search" placeholder="Search title..." />
+    <select id="domain-select" multiple></select>
+    <button id="export-btn">Export Session</button>
+  </div>  
+  <div id="cy"></div>
+  <div id="tooltip" class="tooltip hidden"></div>
+  <script type="module" src="./viewer.js"></script>
+</body>
+</html>

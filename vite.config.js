@@ -5,8 +5,7 @@ export default defineConfig({
     outDir: "dist",
     rollupOptions: {
       input: {
-        viewer: "src/graph/viewer.js",
-        layout: "src/graph/layout.js",
+        viewer: "src/viewer/viewer.js",
         background: "src/background.js",
         popup: "src/popup.js",
       },
