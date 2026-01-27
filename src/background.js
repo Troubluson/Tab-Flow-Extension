@@ -1,3 +1,5 @@
+import { domainFromUrl } from "./utils";
+
 /* =========================
    Session state
 ========================= */
@@ -104,11 +106,10 @@ browser.webNavigation.onCommitted.addListener(async (details) => {
     sourcePageId,
     tabId,
     url: details.url,
-
+    domain: domainFromUrl(details.url),
     // Title is provisional at navigation time
     title: tab.title || null,
     titleProvisional: true,
-
     favicon: tab.favIconUrl ?? null,
     timestamp,
   };

@@ -25,6 +25,12 @@ const ZOOM_LEVELS = [
   },
 ];
 
+export const DETAIL_LEVEL = Object.freeze({
+  OVERVIEW: 0,
+  NORMAL: 1,
+  DETAIL: 2,
+});
+
 export function spacing(deltaMs) {
   const z = ZOOM_LEVELS[currentZoom];
   return Math.min(

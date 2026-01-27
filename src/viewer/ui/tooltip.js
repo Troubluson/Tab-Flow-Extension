@@ -5,6 +5,7 @@ export function showTooltip(node) {
 
   tooltip.innerHTML = `
     <strong>${node.data("fullLabel")}</strong><br/>
+    <small>${node.data("url")}</small><br/>
     <small>${node.data("domain")}</small><br/>
     <small>${node.data("timestampLabel")}</small>
   `;

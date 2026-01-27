@@ -1,6 +1,6 @@
 {
   "manifest_version": 2,
-  "name": "Tab Link Logger",
+  "name": "Visualized browsing history",
   "version": "0.1",
   "description": "Logs visited tabs and tracks which tab opened which.",
   "permissions": [
@@ -11,7 +11,8 @@
   "background": {
     "scripts": [
       "dist/background.js"
-    ]
+    ],
+    "type": "module"
   },
   "browser_action": {
     "default_title": "View Tab Graph",

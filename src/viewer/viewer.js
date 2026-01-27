@@ -1,7 +1,5 @@
 import cytoscape from "cytoscape";
-import Choices from "choices";
-import tippy from "tippy.js"; // Tooltip library
-import "tippy.js/dist/tippy.css";
+import { cy_styles } from "./ui/styles";
 import { loadEvents, domainFromUrl } from "../utils";
 import {
   computeLanes,
@@ -74,53 +72,7 @@ function renderGraph(elements) {
     container: document.getElementById("cy"),
     elements,
     layout: { name: "preset" }, // use our positions
-    style: [
-      {
-        selector: "node",
-        style: {
-          width: NODE_SIZE,
-          height: NODE_SIZE,
-          "background-color": "#4a90e2",
-          "background-image": "data(favicon)",
-          "background-fit": "cover",
-          "border-width": 1,
-          "border-color": "#2c3e50",
-          label: "data(label)",
-          "font-size": 8,
-          "text-valign": "bottom",
-          "text-margin-y": 6,
-          color: "#222",
-        },
-      },
-      {
-        selector: "node[?timestampLabel]",
-        style: {
-          "text-wrap": "wrap",
-          "text-max-width": 120,
-          content: (ele) =>
-            `${ele.data("label")}\n${ele.data("timestampLabel")}`,
-        },
-      },
-      {
-        selector: "edge",
-        style: {
-          width: 1,
-          "line-color": "#999",
-          "target-arrow-shape": "triangle",
-          "target-arrow-color": "#999",
-          "curve-style": "straight",
-        },
-      },
-      {
-        selector: ".highlight",
-        style: {
-          "border-color": "#ff6b6b",
-          "border-width": 2,
-          "line-color": "#ff6b6b",
-          "target-arrow-color": "#ff6b6b",
-        },
-      },
-    ],
+    style: cy_styles,
     autoungrabify: false,
     autolock: false,
     zoomingEnabled: true,
@@ -137,34 +89,49 @@ function renderGraph(elements) {
   });
 
   cy.on("mouseover", "node", (evt) => {
-    showTooltip(evt.target);
+    const node = evt.target;
+    showTooltip(node);
+    const domain = node.data("domain");
+    const url = node.data("url");
+
+    // Fade everything
+    cy.nodes().addClass("faded");
+
+    // Highlight same domain
+    cy.nodes()
+      .filter((n) => n.data("domain") === domain)
+      .removeClass("faded")
+      .addClass("same-domain");
+
+    // Highlight same URL (stronger)
+    cy.nodes()
+      .filter((n) => n.data("url") === url)
+      .removeClass("faded")
+      .removeClass("same-domain")
+      .addClass("same-url");
+
+    node.addClass("hovered");
   });
 
   cy.on("mouseout", "node", hideTooltip);
 
-  // hide during movement (performance)
-  cy.on("pan zoom", hideTooltip);
-
-  cy.on("mouseover", "node", (evt) => {
-    const n = evt.target;
-    n.connectedEdges().addClass("highlight");
-    n.predecessors().addClass("highlight");
-  });
-
   cy.on("mouseout", "node", () => {
-    cy.elements().removeClass("highlight");
+    cy.nodes().removeClass("faded same-domain same-url hovered");
   });
 
   cy.on("zoom", () => {
-    if (cy.zoom() > 1.4) {
-      cy.nodes().style("label", "data(label)");
-    } else {
-      cy.nodes().style("label", "");
-    }
+    const z = cy.zoom();
+
+    let level;
+    if (z < 0.6) level = "overview";
+    else if (z < 1.4) level = "normal";
+    else level = "detail";
+
+    cy.nodes().removeClass("overview normal detail").addClass(level);
+    //addTimeAxis(cy, elements);
   });
 
   return cy;
-  //addTimeAxis(cy, elements);
 }
 
 /* ------------------ Zoom ------------------ */
@@ -175,48 +142,9 @@ async function main() {
   const elements = buildElements(events);
   cy = renderGraph(elements);
 
-  const domainCheckboxes = document.querySelectorAll(".domain-filter");
-  function updateFilters() {
-    const term = searchInput.value;
-    const domains = new Set(
-      [...domainCheckboxes].filter((cb) => cb.checked).map((cb) => cb.value),
-    );
-    applyFilters(cy, term, domains);
-  }
-
   // Collect unique domains
   const domains = new Set(
     elements.filter((el) => el.data?.domain).map((el) => el.data.domain),
-  );
-
-  // Populate dropdown
-  const select = document.getElementById("domain-select");
-  domains.forEach((d) => {
-    const option = document.createElement("option");
-    option.value = d;
-    option.textContent = d;
-    select.appendChild(option);
-  });
-
-  // Initialize Choices.js
-  const choices = new Choices(select, {
-    removeItemButton: true,
-    searchEnabled: true,
-    placeholderValue: "Filter by domain...",
-  });
-
-  // Search input
-  const searchInput = document.getElementById("search");
-
-  function updateFilters() {
-    const term = searchInput.value;
-    const selectedDomains = new Set(choices.getValue(true)); // array of selected domains
-    applyFilters(cy, term, selectedDomains);
-  }
-
-  searchInput?.addEventListener("input", updateFilters);
-  domainCheckboxes.forEach((cb) =>
-    cb.addEventListener("change", updateFilters),
   );
 
   // Export button
