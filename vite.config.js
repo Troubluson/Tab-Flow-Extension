@@ -5,13 +5,12 @@ export default defineConfig({
     outDir: "dist",
     rollupOptions: {
       input: {
+        utils: "src/utils.js",
         viewer: "src/viewer/viewer.js",
         background: "src/background.js",
-        popup: "src/popup.js",
-        utils: "src/utils.js",
+        popup: "src/extension_popup/popup.js",
         export: "src/viewer/ui/export.js",
         tooltip: "src/viewer/ui/tooltip.js",
-        filters: "src/viewer/ui/filters.js",
         styles: "src/viewer/ui/styles.js",
         layout: "src/viewer/layout.js",
       },

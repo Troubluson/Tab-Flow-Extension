@@ -1,10 +1,14 @@
-import { getSessionId, loadEvents } from "./utils";
+import { getSessionId, loadEvents } from "../utils.js";
 
 document.getElementById("start").onclick = async () => {
   const id = await browser.runtime.sendMessage({ type: "START_SESSION" });
   console.log(id);
   if (!id) return;
   document.getElementById("session-id").innerText = `${id} running`;
+};
+
+document.getElementById("continue").onclick = async () => {
+  await browser.runtime.sendMessage({ type: "CONTINUE_SESSION" });
 };
 
 document.getElementById("end").onclick = async () => {

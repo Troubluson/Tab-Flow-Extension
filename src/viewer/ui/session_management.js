@@ -19,3 +19,18 @@ export async function exportSession() {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+const importSession = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const text = await file.text();
+  const events = JSON.parse(text);
+
+  await browser.runtime.sendMessage({
+    type: "IMPORT_SESSION",
+    events,
+  });
+
+  location.reload();
+};

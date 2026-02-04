@@ -85,4 +85,11 @@ export const cy_styles = [
       "z-index": 999,
     },
   },
+  {
+    selector: "node.collapsed",
+    style: {
+      "border-style": "dashed",
+      "border-color": "#999",
+    },
+  },
 ];

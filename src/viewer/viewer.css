@@ -1,0 +1,126 @@
+html,
+body,
+#cy {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+.tooltip {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 14px;
+  max-width: 260px;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+}
+
+.tooltip.hidden {
+  display: none;
+}
+
+.node-menu {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 6px;
+  font-size: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+.node-menu button {
+  display: block;
+  width: 100%;
+  margin: 4px 0;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+
+.hidden {
+  display: none;
+}
+
+.inspector {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 320px;
+  height: 100%;
+  background: #1e1e1e;
+  color: #eee;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.4);
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+}
+
+.inspector.visible {
+  transform: translateX(0);
+}
+
+.inspector-header {
+  padding: 12px;
+  font-weight: bold;
+  background: #2a2a2a;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.inspector-body {
+  padding: 12px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+#inspector-close {
+  width: fit-content;
+  margin: 8px;
+}
+
+.field {
+  margin-bottom: 12px;
+}
+
+.field label {
+  display: block;
+  font-size: 11px;
+  color: #aaa;
+  margin-bottom: 2px;
+}
+
+.field a {
+  color: #4ea1ff;
+  word-break: break-all;
+}
+
+button {
+  width: 100%;
+  margin-top: 6px;
+  padding: 8px;
+  border-radius: 6px;
+  border: none;
+  background: #3a3a3a;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #4a4a4a;
+}
+
+button.danger {
+  background: #7a2e2e;
+}
+
+button.danger:hover {
+  background: #a33;
+}

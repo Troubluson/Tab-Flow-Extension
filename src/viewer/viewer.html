@@ -1,41 +1,47 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-  <meta charset="utf-8" />
-  <title>Tab Graph</title>
-  <style>
-    html, body, #cy {
-      width: 100%;
-      height: 100%;
-      margin: 0;
-    }
+  <head>
+    <meta charset="utf-8" />
+    <title>Tab Graph</title>
+    <link rel="stylesheet" href="./viewer.css" />
+  </head>
+  <body>
+    <div id="controls">
+      <input type="text" id="search" placeholder="Search title..." />
+      <input type="file" id="import-session" accept="application/json" />
+      <button id="export-session">Export Session</button>
+    </div>
+    <div id="cy"></div>
+    <div id="tooltip" class="tooltip hidden"></div>
+    <div id="inspector" class="inspector hidden">
+      <div class="inspector-header">
+        <span id="inspector-title"></span>
+        <button id="inspector-close">×</button>
+      </div>
 
-    .tooltip {
-      position: absolute;
-      background: #fff;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      padding: 8px 10px;
-      font-size: 14px;
-      max-width: 260px;
-      pointer-events: none;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      z-index: 9999;
-    }
+      <div class="inspector-body">
+        <div class="field">
+          <label>URL</label>
+          <a id="inspector-url" target="_blank"></a>
+        </div>
 
-    .tooltip.hidden {
-      display: none;
-    }
-  </style>
-</head>
-<body>
-  <div id="controls">
-    <input type="text" id="search" placeholder="Search title..." />
-    <select id="domain-select" multiple></select>
-    <button id="export-btn">Export Session</button>
-  </div>  
-  <div id="cy"></div>
-  <div id="tooltip" class="tooltip hidden"></div>
-  <script type="module" src="./viewer.js"></script>
-</body>
+        <div class="field">
+          <label>Domain</label>
+          <span id="inspector-domain"></span>
+        </div>
+
+        <div class="field">
+          <label>Opened</label>
+          <span id="inspector-time"></span>
+        </div>
+
+        <hr />
+
+        <button id="btn-open">Open in new tab</button>
+        <button id="btn-collapse">Collapse subtree</button>
+        <button id="btn-delete" class="danger">Delete subtree</button>
+      </div>
+    </div>
+    <script type="module" src="./viewer.js"></script>
+  </body>
 </html>

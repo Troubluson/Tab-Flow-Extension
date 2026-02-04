@@ -211,5 +211,21 @@ browser.runtime.onMessage.addListener(async (msg) => {
       const { [key]: events = [] } = await browser.storage.local.get(key);
       return events;
     }
+    case "CONTINUE_SESSION": {
+      const id = await getActiveSession();
+      if (!id) return;
+      activeSession = id;
+      return true;
+    }
+    case "IMPORT_SESSION": {
+      const sessionId = `session_${Date.now()}`;
+      await browser.storage.local.set({
+        activeSession: sessionId,
+        [`events_${sessionId}`]: msg.events,
+      });
+      return sessionId;
+    }
+    default:
+      return;
   }
 });

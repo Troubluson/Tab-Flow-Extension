@@ -7,12 +7,11 @@ import {
   laneToY,
   normalizeLanes,
 } from "./layout";
-import { applyFilters } from "./ui/filters";
-import { exportSession } from "./ui/export";
+import { exportSession } from "./ui/session_management";
 import { hideTooltip, showTooltip } from "./ui/tooltip";
+import { closeInspector, openInspector } from "./ui/context_menu";
 
 let cy;
-const NODE_SIZE = 25;
 
 /* ------------------ build graph ------------------ */
 function buildElements(events) {
@@ -33,7 +32,7 @@ function buildElements(events) {
     const lane = laneByPage.get(e.pageId);
     const y = laneToY(lane);
 
-    const timestampLabel = new Date(e.timestamp).toLocaleTimeString();
+    const timestampLabel = new Date(e.timestamp).toLocaleString("fi-FI");
 
     const domain = domainFromUrl(e.url);
 
@@ -73,18 +72,26 @@ function renderGraph(elements) {
     elements,
     layout: { name: "preset" }, // use our positions
     style: cy_styles,
-    autoungrabify: false,
+    autoungrabify: true,
     autolock: false,
     zoomingEnabled: true,
     userZoomingEnabled: true,
     panningEnabled: true,
     userPanningEnabled: true,
+    boxSelectionEnabled: false,
+    hideEdgesOnViewport: true,
   });
 
-  cy.on("tap", "node", (evt) => {
-    const url = evt.target.data("url");
-    if (url) {
-      browser.tabs.create({ url });
+  // Removes toggle pan
+  //cy.inertia(false);
+
+  cy.on("cxttap", "node", (evt) => {
+    openInspector(evt.target, cy);
+  });
+
+  cy.on("tap", (evt) => {
+    if (evt.target === cy) {
+      closeInspector();
     }
   });
 
@@ -113,9 +120,8 @@ function renderGraph(elements) {
     node.addClass("hovered");
   });
 
-  cy.on("mouseout", "node", hideTooltip);
-
   cy.on("mouseout", "node", () => {
+    hideTooltip();
     cy.nodes().removeClass("faded same-domain same-url hovered");
   });
 
@@ -151,6 +157,10 @@ async function main() {
   document
     .getElementById("export-btn")
     ?.addEventListener("click", exportSession);
+
+  document
+    .getElementById("import-session")
+    .addEventListener("change", importSession);
 }
 
 main();
