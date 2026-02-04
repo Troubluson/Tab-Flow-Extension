@@ -36,6 +36,7 @@ Currently only for Firefox.
    npm run build
    ```
    This will generate the production files in the `dist/` directory using Vite.
+   Alternatively, use build.ps1 for powershell
 
 ### Loading the Extension
 
@@ -67,3 +68,4 @@ Currently only for Firefox.
 ## License
 
 MIT
+
